@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeosEBookImporter", "NeosEBookImporter\NeosEBookImporter.csproj", "{5BB9D5AC-F516-42E4-AFFD-86836AF8A026}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5BB9D5AC-F516-42E4-AFFD-86836AF8A026}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BB9D5AC-F516-42E4-AFFD-86836AF8A026}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BB9D5AC-F516-42E4-AFFD-86836AF8A026}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BB9D5AC-F516-42E4-AFFD-86836AF8A026}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {545F1117-424D-4CB7-BA2F-483E13C816A6}
+	EndGlobalSection
+EndGlobal
