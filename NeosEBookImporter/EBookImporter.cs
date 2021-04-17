@@ -17,6 +17,13 @@ namespace NeosEBookImporter
     [Category("EBook Importer")]
     public class EBookImporter : Component , ICustomInspector
     {
+        private const string DynVarSpaceName = "EBook";
+        private const string DynVarTitleName = DynVarSpaceName + "/Title";
+        private const string DynVarAuthorCountName = DynVarSpaceName + "/AuthorCount";
+        private const string DynVarAuthorName = DynVarSpaceName + "/Author"; // will be + AuthorNr for multiple authors
+        private const string DynVarChapterCountName = DynVarSpaceName + "/ChapterCount";
+        private const string DynVarChaterName = DynVarSpaceName + "/Chapter"; // will be + AuthorNr for multiple authors
+        private const string DynVarChaterTitleName = DynVarSpaceName + "/ChapterTitle"; // will be + AuthorNr for multiple authors
 
         public readonly Sync<string> EBookPath;
         
@@ -25,6 +32,7 @@ namespace NeosEBookImporter
         protected override void OnAttach()
         {
             base.OnAttach();
+            //Todo: remove
             EBookPath.Value = "D:\\Frankenstein.epub";
         }
 
@@ -44,8 +52,16 @@ namespace NeosEBookImporter
             }
         }
 
+        private void AttachDynVar<T>(Slot slot, string name, T content)
+        {
+            var dynvar = slot.AttachComponent<DynamicValueVariable<T>>();
+            dynvar.VariableName.Value = name;
+            dynvar.Value.Value = content;
+        }
+
         private void ImportEPUB()
         {
+            // clear children
             foreach (var slotChild in Slot.Children)
             {
                 slotChild.Destroy();
@@ -57,24 +73,36 @@ namespace NeosEBookImporter
             {
                 EpubBook book = EpubReader.Read(EBookPath);
 
-                var bookSlot = Slot.AddSlot("EBook");
-                bookSlot.AttachComponent<Grabbable>();
+                var bookSlot = Slot.AddSlot(book.Title);
+                var grabbable = bookSlot.AttachComponent<Grabbable>();
+                grabbable.Scalable.Value = true;
                 bookSlot.AttachComponent<ObjectRoot>();
                 var license = bookSlot.AttachComponent<License>();
-                license.CreditString.Value = "Imported using the NeosEBookImporter plugin";
+                license.CreditString.Value = "Imported using the NeosVREBookImporter plugin";
                 bookSlot.Tag = "ebook";
 
-                var titleSlot = bookSlot.AddSlot(book.Title);
-                var authorsSlot = titleSlot.AddSlot("Authors");
+                var snapper = bookSlot.AttachComponent<Snapper>();
+                snapper.Keywords.Add("ebook");
 
-                foreach (var author in book.Authors)
+                var dynVarsSlot = bookSlot.AddSlot("Dynamic Variables");
+                AttachDynVar(dynVarsSlot, DynVarTitleName, book.Title);
+
+                int authorCount = book.Authors.Count();
+                AttachDynVar(dynVarsSlot, DynVarAuthorCountName, authorCount);
+
+
+                int i = 0;
+                foreach (var bookAuthor in book.Authors)
                 {
-                    authorsSlot.AddSlot(author);
+                    AttachDynVar(dynVarsSlot, DynVarAuthorName+i, bookAuthor);
+                    i++;
                 }
 
                 // Add chapters
-                var chaptersSlot = titleSlot.AddSlot("Chapters");
-                AddChapters(book, chaptersSlot, book.TableOfContents);
+                var chaptersSlot = bookSlot.AddSlot("Chapters");
+                var chapterCount = AddChapters(book, chaptersSlot, book.TableOfContents);
+
+                AttachDynVar(chaptersSlot, DynVarChapterCountName, chapterCount);
 
                 CreateVisual(bookSlot, book.Title);
 
@@ -102,30 +130,29 @@ namespace NeosEBookImporter
             }
         }
 
-        private void AddChapters(EpubBook book, Slot chaptersSlot, IList<EpubChapter> chapters)
+        private int AddChapters(EpubBook book, Slot chaptersSlot, IList<EpubChapter> chapters, int chapterCount = 0)
         {
             if(chapters.Count == 0)
-                return;
+                return 0;
 
-            for (var i = 0; i < chapters.Count; i++)
+            for (var i = 0; i < chapters.Count; i++, chapterCount++)
             {
                 var chap = chapters[i];
-                var chapterSlot = chaptersSlot.AddSlot($"Chapter {i + 1}");
-                chapterSlot.AddSlot("title").AddSlot(chap.Title);
+                var chapterSlot = chaptersSlot.AddSlot($"Chapter {chapterCount}");
+                AttachDynVar(chapterSlot, DynVarChaterTitleName+chapterCount, chap.Title);
 
                 var text = book.Resources.Html.FirstOrDefault(x => x.FileName == chap.FileName);
 
-                chapterSlot.AddSlot("Text").Tag = ParseChapterHtml(text.TextContent);
+                AttachDynVar(chapterSlot, DynVarChaterName+chapterCount, ParseChapterHtml(text.TextContent));
                 
                 // recurse all subchapters
                 if (chap.SubChapters.Count > 0)
                 {
-                    var subChapter = chapterSlot.AddSlot("Subchapters");
-                    AddChapters(book, subChapter, chap.SubChapters);
+                    chapterCount = AddChapters(book, chaptersSlot, chap.SubChapters, chapterCount);
                 }
             }
 
-            
+            return chapterCount;
         }
 
         private string ParseChapterHtml(string html)
