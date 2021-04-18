@@ -2,6 +2,8 @@
 
 This is a plugin for NeosVR that lets you import EPUB e-books into a specific format that can be used to display them in the metaverse.
 
+It uses the [EpubSharp](https://github.com/Asido/EpubSharp) library to import EPUBs, some books may not work.
+
 # Legality disclaimer
 
 **If you import ebooks into NeosVR and sync them to the cloud, you are only allowed to share them with other people if you actually have the right to do so.
