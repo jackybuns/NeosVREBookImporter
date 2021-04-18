@@ -26,6 +26,7 @@ namespace NeosEBookImporter
         private const string DynVarChaterTitleName = DynVarSpaceName + "/ChapterTitle"; // will be + AuthorNr for multiple authors
 
         public readonly Sync<string> EBookPath;
+        public readonly Sync<bool> Recursive;
         
         private Text output;
 
@@ -33,7 +34,7 @@ namespace NeosEBookImporter
         {
             base.OnAttach();
             //Todo: remove
-            EBookPath.Value = "D:\\Frankenstein.epub";
+            EBookPath.Value = "D:\\epubs\\Frankenstein.epub";
         }
 
         public void BuildInspectorUI(UIBuilder ui)
@@ -67,66 +68,89 @@ namespace NeosEBookImporter
                 slotChild.Destroy();
             }
 
+            var filesToImport = new List<string>();
+            var fileAttributes = File.GetAttributes(EBookPath.Value);
+
+            if (fileAttributes.HasFlag(FileAttributes.Directory))
+            {
+                var files = Directory.GetFiles(EBookPath.Value, "*.epub",
+                    Recursive.Value ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+                filesToImport.AddRange(files);
+            }
+            else
+            {
+                filesToImport.Add(EBookPath.Value);
+            }
+
             Message("Starting import...");
             //World.AddSlot(this.Slot, "EPUB");
-            try
+            foreach (var file in filesToImport)
             {
-                EpubBook book = EpubReader.Read(EBookPath);
-
-                var bookSlot = Slot.AddSlot(book.Title);
-                var grabbable = bookSlot.AttachComponent<Grabbable>();
-                grabbable.Scalable.Value = true;
-                bookSlot.AttachComponent<ObjectRoot>();
-                var license = bookSlot.AttachComponent<License>();
-                license.CreditString.Value = "Imported using the NeosVREBookImporter plugin";
-                bookSlot.Tag = "ebook";
-
-                var snapper = bookSlot.AttachComponent<Snapper>();
-                snapper.Keywords.Add("ebook");
-
-                var dynVarsSlot = bookSlot.AddSlot("Dynamic Variables");
-                AttachDynVar(dynVarsSlot, DynVarTitleName, book.Title);
-
-                int authorCount = book.Authors.Count();
-                AttachDynVar(dynVarsSlot, DynVarAuthorCountName, authorCount);
-
-
-                int i = 0;
-                foreach (var bookAuthor in book.Authors)
+                try
                 {
-                    AttachDynVar(dynVarsSlot, DynVarAuthorName+i, bookAuthor);
-                    i++;
+                    if (!File.Exists(file))
+                    {
+                        Message("File could not be found!");
+                        return;
+                    }
+
+                    EpubBook book = EpubReader.Read(file);
+
+                    var bookSlot = Slot.AddSlot(book.Title);
+                    var grabbable = bookSlot.AttachComponent<Grabbable>();
+                    grabbable.Scalable.Value = true;
+                    bookSlot.AttachComponent<ObjectRoot>();
+                    var license = bookSlot.AttachComponent<License>();
+                    license.CreditString.Value = "Imported using the NeosVREBookImporter plugin";
+                    bookSlot.Tag = "ebook";
+
+                    var snapper = bookSlot.AttachComponent<Snapper>();
+                    snapper.Keywords.Add("ebook");
+
+                    var dynVarsSlot = bookSlot.AddSlot("Dynamic Variables");
+                    AttachDynVar(dynVarsSlot, DynVarTitleName, book.Title);
+
+                    int authorCount = book.Authors.Count();
+                    AttachDynVar(dynVarsSlot, DynVarAuthorCountName, authorCount);
+
+
+                    int i = 0;
+                    foreach (var bookAuthor in book.Authors)
+                    {
+                        AttachDynVar(dynVarsSlot, DynVarAuthorName + i, bookAuthor);
+                        i++;
+                    }
+
+                    // Add chapters
+                    var chaptersSlot = bookSlot.AddSlot("Chapters");
+                    var chapterCount = AddChapters(book, chaptersSlot, book.TableOfContents);
+
+                    AttachDynVar(chaptersSlot, DynVarChapterCountName, chapterCount);
+
+                    CreateVisual(bookSlot, book.Title);
+
+                    Message("Yay done!");
                 }
-
-                // Add chapters
-                var chaptersSlot = bookSlot.AddSlot("Chapters");
-                var chapterCount = AddChapters(book, chaptersSlot, book.TableOfContents);
-
-                AttachDynVar(chaptersSlot, DynVarChapterCountName, chapterCount);
-
-                CreateVisual(bookSlot, book.Title);
-
-                Message("Yay done!");
-            }
-            catch (FileNotFoundException e)
-            {
-                Message("EPUB could not be found!");
-                Slot.AddSlot("Error message in tag").Tag = e.Message;
-            }
-            catch (IOException e)
-            {
-                Message("EPUB could not be read!");
-                Slot.AddSlot("Error message in tag").Tag = e.Message;
-            }
-            catch (XmlException e)
-            {
-                Message("Error occurred while parsing chapter html!");
-                Slot.AddSlot("Error message in tag").Tag = e.Message;
-            }
-            catch (Exception e)
-            {
-                Message("An unknown error occurred while importing");
-                Slot.AddSlot("Error message in tag").Tag = e.Message;
+                catch (FileNotFoundException e)
+                {
+                    Message("EPUB could not be found!");
+                    Slot.AddSlot("Error message in tag").Tag = e.Message;
+                }
+                catch (IOException e)
+                {
+                    Message("EPUB could not be read!");
+                    Slot.AddSlot("Error message in tag").Tag = e.Message;
+                }
+                catch (XmlException e)
+                {
+                    Message("Error occurred while parsing chapter html!");
+                    Slot.AddSlot("Error message in tag").Tag = e.Message;
+                }
+                catch (Exception e)
+                {
+                    Message("An unknown error occurred while importing");
+                    Slot.AddSlot("Error message in tag").Tag = e.Message;
+                }
             }
         }
 
