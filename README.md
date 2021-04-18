@@ -8,9 +8,9 @@ It uses the [EpubSharp](https://github.com/Asido/EpubSharp) library to import EP
 
 **If you import ebooks into NeosVR and sync them to the cloud, you are only allowed to share them with other people if you actually have the right to do so.
 If the book is in the public domain - and your local laws allow you to - you can share it freely in public folders or hand them to other people.
-On the other hand, if the book is under copyright or other licsenses that prohibit distribution of said book, you are only allowed to use it for yourself and NOT share it with others.
+On the other hand, if the book is under copyright or other licsenses that prohibit distribution of said book, you are only allowed to use it for yourself and NOT share it with others.**
 
-No legal liability falls upon the developers of this tool, you are responsible for your own doings. 
+**No legal liability falls upon the developers of this tool, you are responsible for your own doings. 
 The tools just provides the means to import ebooks, what you do with the ebooks is your responsibility.**
 
 # How to use
