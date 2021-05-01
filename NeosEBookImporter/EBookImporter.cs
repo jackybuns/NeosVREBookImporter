@@ -24,6 +24,8 @@ namespace NeosEBookImporter
         private const string DynVarChapterCountName = DynVarSpaceName + "/ChapterCount";
         private const string DynVarChaterName = DynVarSpaceName + "/Chapter"; // will be + AuthorNr for multiple authors
         private const string DynVarChaterTitleName = DynVarSpaceName + "/ChapterTitle"; // will be + AuthorNr for multiple authors
+        private const string DynVarCurrentPosition = DynVarSpaceName + "/CurrentPosition"; // will be + AuthorNr for multiple authors
+        private const string DynVarCurrentChapter = DynVarSpaceName + "/CurrentChapter"; // will be + AuthorNr for multiple authors
 
         public readonly Sync<string> EBookPath;
         public readonly Sync<bool> Recursive;
@@ -109,6 +111,8 @@ namespace NeosEBookImporter
 
                     var dynVarsSlot = bookSlot.AddSlot("Dynamic Variables");
                     AttachDynVar(dynVarsSlot, DynVarTitleName, book.Title);
+                    AttachDynVar<int>(dynVarsSlot, DynVarCurrentPosition, 0);
+                    AttachDynVar<int>(dynVarsSlot, DynVarCurrentChapter, -1);
 
                     int authorCount = book.Authors.Count();
                     AttachDynVar(dynVarsSlot, DynVarAuthorCountName, authorCount);
