@@ -55,3 +55,5 @@ DynVar Space: **EBook**
 | **EBook/ChapterCount** | The number of chapters in the book |
 | **EBook/Chapter#** | The contents of a specific chapter. # is also the 0 based index like the authors. |
 | **EBook/ChapterTitle#** | The title of the specific chapter. # is the index again |
+| **EBook/CurrentChapter** | The current chapter. Used as a bookmark. |
+| **EBook/CurrentPosition** | The current position in the current chapter. The actual char index of the chapter string. Also used as a bookmark. |
