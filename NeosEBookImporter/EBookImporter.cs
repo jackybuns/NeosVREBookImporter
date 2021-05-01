@@ -10,6 +10,8 @@ using System.Xml.XPath;
 using BaseX;
 using EpubSharp;
 using FrooxEngine;
+using FrooxEngine.CommonAvatar;
+using FrooxEngine.LogiX.WorldModel;
 using FrooxEngine.UIX;
 
 namespace NeosEBookImporter
@@ -22,13 +24,14 @@ namespace NeosEBookImporter
         private const string DynVarAuthorCountName = DynVarSpaceName + "/AuthorCount";
         private const string DynVarAuthorName = DynVarSpaceName + "/Author"; // will be + AuthorNr for multiple authors
         private const string DynVarChapterCountName = DynVarSpaceName + "/ChapterCount";
-        private const string DynVarChaterName = DynVarSpaceName + "/Chapter"; // will be + AuthorNr for multiple authors
-        private const string DynVarChaterTitleName = DynVarSpaceName + "/ChapterTitle"; // will be + AuthorNr for multiple authors
-        private const string DynVarCurrentPosition = DynVarSpaceName + "/CurrentPosition"; // will be + AuthorNr for multiple authors
-        private const string DynVarCurrentChapter = DynVarSpaceName + "/CurrentChapter"; // will be + AuthorNr for multiple authors
+        private const string DynVarChaterName = DynVarSpaceName + "/Chapter"; // will be + ChapterNr for multiple chapters
+        private const string DynVarChaterTitleName = DynVarSpaceName + "/ChapterTitle"; 
+        private const string DynVarCurrentPosition = DynVarSpaceName + "/CurrentPosition"; 
+        private const string DynVarCurrentChapter = DynVarSpaceName + "/CurrentChapter"; 
 
         public readonly Sync<string> EBookPath;
         public readonly Sync<bool> Recursive;
+        public readonly Sync<bool> AddSimpleAvatarProtection;
         
         private Text output;
 
@@ -37,6 +40,7 @@ namespace NeosEBookImporter
             base.OnAttach();
             //Todo: remove
             EBookPath.Value = "D:\\epubs\\Frankenstein.epub";
+            AddSimpleAvatarProtection.Value = true;
         }
 
         public void BuildInspectorUI(UIBuilder ui)
@@ -99,6 +103,13 @@ namespace NeosEBookImporter
                     EpubBook book = EpubReader.Read(file);
 
                     var bookSlot = Slot.AddSlot(book.Title);
+
+                    if (AddSimpleAvatarProtection.Value)
+                    {
+                        var protection = bookSlot.AttachComponent<SimpleAvatarProtection>();
+                        protection.User.Target = this.LocalUser;
+                    }
+
                     var grabbable = bookSlot.AttachComponent<Grabbable>();
                     grabbable.Scalable.Value = true;
                     bookSlot.AttachComponent<ObjectRoot>();
