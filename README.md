@@ -47,13 +47,13 @@ DynVar Space: **EBook**
 
 ## Dynamic Variables
 
-| Variable name | Description |
-| --- | --- |
-| **EBook/Title** | The ebook title |
-| **EBook/AuthorCount** | The number of authors that wrote the book |
-| **EBook/Author#** | A specific author. # is the 0 based index of the author. So the first author is Author0, the second one Author1, and so on. |
-| **EBook/ChapterCount** | The number of chapters in the book |
-| **EBook/Chapter#** | The contents of a specific chapter. # is also the 0 based index like the authors. |
-| **EBook/ChapterTitle#** | The title of the specific chapter. # is the index again |
-| **EBook/CurrentChapter** | The current chapter. Used as a bookmark. |
-| **EBook/CurrentPosition** | The current position in the current chapter. The actual char index of the chapter string. Also used as a bookmark. |
+| Variable name | Type | Description |
+| --- | --- | ---
+| **EBook/Title** | String | The ebook title |
+| **EBook/AuthorCount** | int | The number of authors that wrote the book |
+| **EBook/Author#** | String | A specific author. # is the 0 based index of the author. So the first author is Author0, the second one Author1, and so on. |
+| **EBook/ChapterCount** | int | The number of chapters in the book |
+| **EBook/Chapter#** | String | The contents of a specific chapter. # is also the 0 based index like the authors. |
+| **EBook/ChapterTitle#** | String | The title of the specific chapter. # is the index again |
+| **EBook/CurrentChapter** | int | The current chapter. Used as a bookmark. |
+| **EBook/CurrentPosition** | int | The current position in the current chapter. The actual char index of the chapter string. Also used as a bookmark. Starts at -1 for title page. |
