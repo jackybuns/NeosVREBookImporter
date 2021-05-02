@@ -40,6 +40,9 @@
     <Reference Include="FrooxEngine">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Neos_Data\Managed\FrooxEngine.dll</HintPath>
     </Reference>
+    <Reference Include="HtmlAgilityPack, Version=1.11.33.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HtmlAgilityPack.1.11.33\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -60,6 +63,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)$(TargetName).dll" "C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Libraries\$(TargetName).dll
-xcopy "$(TargetDir)EpubSharp.dll" "C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Libraries\" /E /H /C /I /Y</PostBuildEvent>
+xcopy "$(TargetDir)EpubSharp.dll" "C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Libraries\" /E /H /C /I /Y
+xcopy "$(TargetDir)HtmlAgilityPack.dll" "C:\Program Files (x86)\Steam\steamapps\common\NeosVR\Libraries\" /E /H /C /I /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>

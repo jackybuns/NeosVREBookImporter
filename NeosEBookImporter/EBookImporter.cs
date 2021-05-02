@@ -13,11 +13,12 @@ using FrooxEngine;
 using FrooxEngine.CommonAvatar;
 using FrooxEngine.LogiX.WorldModel;
 using FrooxEngine.UIX;
+using HtmlAgilityPack;
 
 namespace NeosEBookImporter
 {
     [Category("EBook Importer")]
-    public class EBookImporter : Component , ICustomInspector
+    public class EBookImporter : Component, ICustomInspector
     {
         private const string DynVarSpaceName = "EBook";
         private const string DynVarTitleName = DynVarSpaceName + "/Title";
@@ -25,14 +26,14 @@ namespace NeosEBookImporter
         private const string DynVarAuthorName = DynVarSpaceName + "/Author"; // will be + AuthorNr for multiple authors
         private const string DynVarChapterCountName = DynVarSpaceName + "/ChapterCount";
         private const string DynVarChaterName = DynVarSpaceName + "/Chapter"; // will be + ChapterNr for multiple chapters
-        private const string DynVarChaterTitleName = DynVarSpaceName + "/ChapterTitle"; 
-        private const string DynVarCurrentPosition = DynVarSpaceName + "/CurrentPosition"; 
-        private const string DynVarCurrentChapter = DynVarSpaceName + "/CurrentChapter"; 
+        private const string DynVarChaterTitleName = DynVarSpaceName + "/ChapterTitle";
+        private const string DynVarCurrentPosition = DynVarSpaceName + "/CurrentPosition";
+        private const string DynVarCurrentChapter = DynVarSpaceName + "/CurrentChapter";
 
         public readonly Sync<string> EBookPath;
         public readonly Sync<bool> Recursive;
         public readonly Sync<bool> AddSimpleAvatarProtection;
-        
+
         private Text output;
 
         protected override void OnAttach()
@@ -97,10 +98,17 @@ namespace NeosEBookImporter
                     if (!File.Exists(file))
                     {
                         Message("File could not be found!");
+                        Slot.AddSlot("Error message in tag").Tag = file + " could not be found!";
                         return;
                     }
 
                     EpubBook book = EpubReader.Read(file);
+
+                    if (book == null)
+                    {
+                        Message("Book could not be loaded for an unknown reason!");
+                        Slot.AddSlot("Error message in tag").Tag = file + " could not not be loaded for an unknown reason!";
+                    }
 
                     var bookSlot = Slot.AddSlot(book.Title);
 
@@ -148,42 +156,52 @@ namespace NeosEBookImporter
                 }
                 catch (FileNotFoundException e)
                 {
-                    Message("EPUB could not be found!");
-                    Slot.AddSlot("Error message in tag").Tag = e.Message;
+                    LogError("EPUB could not be found!", e);
                 }
                 catch (IOException e)
                 {
-                    Message("EPUB could not be read!");
-                    Slot.AddSlot("Error message in tag").Tag = e.Message;
+                    LogError("EPUB could not be read!", e);
                 }
                 catch (XmlException e)
                 {
-                    Message("Error occurred while parsing chapter html!");
-                    Slot.AddSlot("Error message in tag").Tag = e.Message;
+                    LogError("Error occurred while parsing chapter html!", e);
                 }
                 catch (Exception e)
                 {
-                    Message("An unknown error occurred while importing");
-                    Slot.AddSlot("Error message in tag").Tag = e.Message;
+                    LogError("An unknown error occurred while importing", e);
                 }
             }
         }
 
+        private void LogError(String message, Exception e)
+        {
+            Message(message);
+            Slot.AddSlot("Error message in tag").Tag = e.Message;
+            UniLog.Error(message, false);
+            UniLog.Error(e.Message, true);
+        }
+
         private int AddChapters(EpubBook book, Slot chaptersSlot, IList<EpubChapter> chapters, int chapterCount = 0)
         {
-            if(chapters.Count == 0)
+            if (chapters.Count == 0)
                 return 0;
 
             for (var i = 0; i < chapters.Count; i++, chapterCount++)
             {
                 var chap = chapters[i];
                 var chapterSlot = chaptersSlot.AddSlot($"Chapter {chapterCount}");
-                AttachDynVar(chapterSlot, DynVarChaterTitleName+chapterCount, chap.Title);
+                AttachDynVar(chapterSlot, DynVarChaterTitleName + chapterCount, chap.Title);
 
                 var text = book.Resources.Html.FirstOrDefault(x => x.FileName == chap.FileName);
+                if (text == null)
+                {
+                    AttachDynVar(chapterSlot, DynVarChaterName + chapterCount, "<b>" + chap.Title + "</b>");
+                }
+                else
+                {
+                    AttachDynVar(chapterSlot, DynVarChaterName + chapterCount, ParseChapterHtml(text.TextContent));
+                }
 
-                AttachDynVar(chapterSlot, DynVarChaterName+chapterCount, ParseChapterHtml(text.TextContent));
-                
                 // recurse all subchapters
                 if (chap.SubChapters.Count > 0)
                 {
@@ -196,69 +214,49 @@ namespace NeosEBookImporter
 
         private string ParseChapterHtml(string html)
         {
-            var doc = new XmlDocument();
-            doc.LoadXml(html);
+            if (html == null)
+            {
+                throw new ArgumentNullException("Chapter html cannot be null!");
+            }
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
 
-            var paragraphs = doc.GetElementsByTagName("p");
             StringBuilder sb = new StringBuilder();
-            /*
-            if (paragraphs.Count > 0)
+            var body = doc.DocumentNode.SelectNodes("//body").First();
+
+            if (body == null)
             {
-                for (int j = 0; j < paragraphs.Count; j++)
-                {
-                    var item = paragraphs.Item(j);
-                    if (item != null)
-                    {
-                        sb.AppendLine(item.InnerText);
-                        sb.AppendLine();
-                    }
-                }
+                throw new Exception("Could not parse chapter!");
             }
-            else
-            {
-                var bodies = doc.GetElementsByTagName("body");
-                for (int j = 0; j < bodies.Count; j++)
-                {
-                    var children = bodies[j].ChildNodes;
-                    for (int k = 0; k < children.Count; k++)
-                    {
-                        sb.AppendLine(children[k].InnerText);
-                        sb.AppendLine();
-                    }
-                }
-            }
-            */
-            var bodies = doc.GetElementsByTagName("body");
-            for (int j = 0; j < bodies.Count; j++)
-            {
-                ParseXMLNode(bodies.Item(j),sb);
-            }
+
+            ParseNode(body, sb);
 
             return sb.ToString();
         }
 
-        private void ParseXMLNode(XmlNode node, StringBuilder sb)
+        private void ParseNode(HtmlNode node, StringBuilder sb)
         {
+            if (node == null) return;
             if (node.Name == "p" || node.Name.StartsWith("h"))
             {
-                sb.AppendLine(node.InnerText);
-                sb.AppendLine();
+                sb.AppendLine(HtmlEntity.DeEntitize(node.InnerText));
+                //sb.AppendLine();
             }
             else
             {
                 if (!node.HasChildNodes)
                 {
-                    sb.Append(node.InnerText).Append(" ");
+                    sb.Append(HtmlEntity.DeEntitize(node.InnerText)).Append(" ");
                 }
                 else
                 {
                     for (int i = 0; i < node.ChildNodes.Count; i++)
                     {
-                        ParseXMLNode(node.ChildNodes.Item(i), sb);
+                        ParseNode(node.ChildNodes[i], sb);
                     }
                 }
             }
-        
+
         }
 
         private void CreateVisual(Slot parent, string title)
